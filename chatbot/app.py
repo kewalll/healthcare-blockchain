@@ -1,87 +1,9 @@
-# from fastapi import FastAPI
-# from pydantic import BaseModel
-# from fastapi.middleware.cors import CORSMiddleware
-# from langchain_google_genai import ChatGoogleGenerativeAI
-# from langchain_core.prompts import ChatPromptTemplate
-# from langchain_core.output_parsers import StrOutputParser
-# import os
-# from dotenv import load_dotenv
-
-# # Load environment variables
-# load_dotenv()
-# api_key = os.getenv("GOOGLE_API_KEY")
-# if not api_key:
-#     raise ValueError("❌ GOOGLE_API_KEY not found. Please check your .env file.")
-
-# # Setup LangChain tracing (optional)
-# os.environ["LANGCHAIN_TRACING_V2"] = "true"
-# os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
-
-# # Initialize FastAPI app
-# app = FastAPI()
-
-# # Allow frontend (React) to call backend
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # you can restrict this to ["http://localhost:5173"] for security
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# # Define request body model
-# class ChatRequest(BaseModel):
-#     message: str
-
-# # Define LangChain prompt
-# prompt = ChatPromptTemplate.from_messages(
-#     [
-#         (
-#             "system",
-#             "You are a knowledgeable and empathetic medical assistant. "
-#             "Always respond in a clear, structured format using bullet points. "
-#             "Your answers must:\n"
-#             "- Be concise, accurate, and medically relevant.\n"
-#             "- Use clear section headers in bold (e.g., **Causes**, **Symptoms**, **Treatment**, **Prevention**).\n"
-#             "- Under each section, list items as bullet points with short explanations.\n"
-#             "- Ensure spacing and alignment are neat for easy readability.\n"
-#             "- Avoid long paragraphs; focus on point-wise formatting.\n"
-#             "If the question is about lifestyle or health habits, structure the response under:\n"
-#             "• **What to avoid**\n"
-#             "• **When to avoid**\n"
-#             "• **Why to avoid**\n"
-#             "Make the answer look like a well-formatted medical note."
-#         ),
-#         ("user", "Question: {question}"),
-#     ]
-# )
-
-
-
-# # Setup Gemini model
-# llm = ChatGoogleGenerativeAI(
-#     model="gemini-2.5-flash",
-#     temperature=0,
-#     google_api_key=api_key,
-# )
-
-# output_parse = StrOutputParser()
-# chain = prompt | llm | output_parse
-
-# # API route for chatbot
-# @app.post("/chat")
-# async def chat(req: ChatRequest):
-#     try:
-#         response = chain.invoke({"question": req.message})
-#         return {"reply": response}
-#     except Exception as e:
-#         return {"reply": f"⚠️ Error: {str(e)}"}
-
-
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+# from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings  # ❌ Commented Gemini
+from langchain_groq import ChatGroq  # ✅ Groq LLM
+from langchain_community.embeddings import HuggingFaceEmbeddings  # ✅ HuggingFace embeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_community.vectorstores import FAISS
@@ -92,12 +14,14 @@ import os
 from dotenv import load_dotenv
 import tempfile
 from PyPDF2 import PdfReader
+import time
 
 # ============ Load Environment Variables ============
 load_dotenv()
-api_key = os.getenv("GOOGLE_API_KEY")
-if not api_key:
-    raise ValueError("❌ GOOGLE_API_KEY not found. Please check your .env file.")
+# api_key = os.getenv("GOOGLE_API_KEY")   # ❌ Gemini not needed
+groq_api_key = os.getenv("GROQ_API_KEY")  # ✅ Groq key
+if not groq_api_key:
+    raise ValueError("❌ GROQ_API_KEY not found. Please check your .env file.")
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
@@ -142,17 +66,24 @@ prompt = ChatPromptTemplate.from_messages(
 )
 
 # ============ LLM Setup ============
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    temperature=0,
-    google_api_key=api_key,
+# llm = ChatGoogleGenerativeAI(    # ❌ Gemini
+#     model="gemini-2.5-flash",
+#     temperature=0,
+#     google_api_key=api_key,
+# )
+
+llm = ChatGroq(   # ✅ Groq LLM
+    groq_api_key=groq_api_key,
+    model_name="gemma2-9b-it",
+    temperature=0
 )
 
 output_parse = StrOutputParser()
 chain = prompt | llm | output_parse
 
 # ============ Embeddings + FAISS ============
-embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)
+# embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)  # ❌ Gemini
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")  # ✅ HuggingFace
 vectorstore = None  # Global store (in-memory for now)
 
 # ============ Chat API ============
@@ -196,6 +127,10 @@ async def upload_document(file: UploadFile = File(...)):
 
         # Create FAISS vectorstore
         vectorstore = FAISS.from_documents(docs, embeddings)
+        for i, doc in enumerate(docs):
+            if i > 0 and i % 5 == 0:  # Pause every 5 chunks
+                print("Pausing to respect API rate limits...")
+                time.sleep(2)  # ✅ Reduced for HuggingFace (local models don’t need long pauses)
 
         return {"message": f"✅ Document '{file.filename}' uploaded and indexed successfully!"}
 

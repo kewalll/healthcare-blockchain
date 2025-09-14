@@ -47,8 +47,8 @@ const Chatbot = () => {
 
         try {
             const endpoint = docUploaded
-                ? "http://localhost:8000/doc-qna"
-                : "http://localhost:8000/chat";
+                ? "http://localhost:8003/doc-qna"
+                : "http://localhost:8003/chat";
 
             const res = await fetch(endpoint, {
                 method: "POST",
@@ -79,7 +79,7 @@ const Chatbot = () => {
         setIsLoading(true);
 
         try {
-            const res = await fetch("http://localhost:8000/upload-doc", {
+            const res = await fetch("http://localhost:8003/upload-doc", {
                 method: "POST",
                 body: formData,
             });

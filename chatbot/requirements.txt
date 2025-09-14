@@ -21,3 +21,7 @@ requests
 tiktoken
 python-docx   # (optional for docx support)
 python-multipart
+sentence-transformers
+huggingface_hub
+langchain-groq
+groq
