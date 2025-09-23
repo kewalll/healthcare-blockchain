@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useBlockchain } from "../context/BlockchainContext";
 import Chatbot from "../components/Chatbot";
 
@@ -133,6 +133,7 @@ const PatientDashboard = () => {
           allergies: data.allergies,
         });
       } catch (err) {
+        console.log(err);
         setUser(null);
       }
       let openCases = [];
@@ -158,6 +159,7 @@ const PatientDashboard = () => {
         setCases(openCases);
         setClosedCasesCount(closedCases);
       } catch (err) {
+        console.log(err);
         setCases([]);
         setClosedCasesCount(0);
       }
@@ -180,6 +182,7 @@ const PatientDashboard = () => {
           meds.length > 0 ? meds.join(", ") : "None prescribed"
         );
       } catch (err) {
+        console.log(err);
         setRecentMedication("None prescribed");
       }
 
