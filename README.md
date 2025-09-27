@@ -97,3 +97,36 @@ Patients have **full ownership of their health data**, while doctors and adminis
 - **Authentication**: MetaMask + Passcode-based access  
 
 ---
+
+## 🏗️ System Architecture
+
+```mermaid
+flowchart TD
+    %% Roles
+    P[👤 Patient] -->|Registers / Views Data| FE[🌐 React Frontend]
+    D[🩺 Doctor] -->|Creates / Updates Records| FE
+    A[🛡️ Admin] -->|Manages Providers & Roles| FE
+
+    %% Frontend
+    FE -->|Blockchain Txns| SC[⚡ Smart Contracts<br/>Solidity on Energy Web Volta]
+
+    %% Data Storage
+    SC -->|Logs + Critical Data| BC[(⛓️ Blockchain Ledger)]
+    FE -->|Large Files / Reports| IPFS[(📂 IPFS Storage)]
+    
+    %% Notifications
+    SC -->|Events| NF[🔔 Real-Time Notifications]
+
+    %% Patient Keys
+    P -->|Encryption Keys| IPFS
+
+    %% Legend
+    classDef role fill:#ffebe6,stroke:#d9534f,stroke-width:2px;
+    classDef layer fill:#e6f2ff,stroke:#0275d8,stroke-width:2px;
+    classDef storage fill:#eaffea,stroke:#5cb85c,stroke-width:2px;
+    classDef service fill:#fff0b3,stroke:#f0ad4e,stroke-width:2px;
+
+    class P,D,A role;
+    class FE layer;
+    class SC,NF layer;
+    class BC,IPFS storage;
