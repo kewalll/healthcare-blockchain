@@ -66,6 +66,12 @@ const Navbar = () => {
                                     <span>Patient Dashboard</span>
                                 </Link>
                             )}
+                            {role === "Doctor" && (
+                                <Link to="/history-summary" className="flex items-center hover:text-green-400 transition duration-300">
+                                    <History size={16} className="mr-1" />
+                                    <span>History Summary</span>
+                                </Link>
+                            )}
                         </>
                     )}
                 </div>
