@@ -204,8 +204,8 @@ async def summarize_details(req: SummarizerRequest):
         summary_prompt = ChatPromptTemplate.from_messages([
             (
                 "system",
-                "You are a helpful assistant that writes simple medical summaries for patients. "
-                "Summarize the given case titles in 2–4 easy sentences, avoiding medical jargon."
+                "You are a helpful assistant that writes simple medical summaries of patients for doctors. "
+                "Summarize the given case titles in easy sentences, avoiding medical jargon but including every crucial details of the disease , medication and treatment."
             ),
             ("user", f"Case records:\n{combined_cases}")
         ])
