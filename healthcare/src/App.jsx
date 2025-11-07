@@ -10,6 +10,7 @@ import CaseDetails from "./pages/CaseDetails";
 import PatientCaseDetails from "./pages/PatientCaseDetails";
 import PatientDashboard from "./pages/PatientDashboard";
 import HistorySummary from "./pages/HistorySummary";
+import FamilyAccessPage from "./pages/FamilyAccessPage";
 
 const App = () => {
     return (
@@ -27,6 +28,7 @@ const App = () => {
                     <Route path="/patient/case-details/:caseId" element={<PatientCaseDetails />} />
                     <Route path="/patientdashboard" element={<PatientDashboard />} />
                     <Route path="/history-summary" element={<HistorySummary />} />
+                    <Route path="/family-access" element={<FamilyAccessPage />} />
                 </Routes>
             </div>
         </>

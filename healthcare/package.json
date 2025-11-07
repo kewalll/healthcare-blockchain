@@ -10,8 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ethersproject/providers": "^5.8.0",
+    "@web3-react/core": "^8.2.3",
+    "@web3-react/injected-connector": "^6.0.7",
     "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
+    "eventemitter3": "^5.0.1",
     "ipfs-http-client": "^53.0.1",
     "lucide-react": "^0.479.0",
     "react": "^19.0.0",

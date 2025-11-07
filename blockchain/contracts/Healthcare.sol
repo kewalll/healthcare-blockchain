@@ -62,6 +62,17 @@ contract Healthcare {
     mapping(address => uint256[]) public patientActivities; // Patient address -> activity IDs
     mapping(address => uint256) public lastAccessTime; // Track last access for each user
 
+    // Family sharing mappings
+    struct FamilyMember {
+        address memberAddress;
+        string relationship;
+        bool hasAccess;
+        uint256 accessGrantedAt;
+    }
+    
+    mapping(address => mapping(address => FamilyMember)) public familyAccess; // patient => (member => details)
+    mapping(address => address[]) public patientFamilyMembers; // patient => list of family member addresses
+
     uint256 public caseCounter;
     uint256 public recordCounter;
     uint256 public activityCounter; // New counter for activities
@@ -99,6 +110,10 @@ contract Healthcare {
         address indexed doctor,
         uint256 indexed recordId
     );
+
+    // Family Sharing Events
+    event AccessGranted(address indexed patient, address indexed familyMember, string relationship);
+    event AccessRevoked(address indexed patient, address indexed familyMember);
 
     modifier onlyAdmin() {
         require(isAdmin[msg.sender], "Only admin can perform this action");
@@ -197,6 +212,82 @@ contract Healthcare {
         emit PatientRegistered(msg.sender, _fullName);
     }
 
+    // Function to verify if a user has access to a patient's records
+    function hasAccess(address _patient, address _requester) public view returns (bool) {
+        // Check if requester is the patient
+        if (_patient == _requester) return true;
+        
+        // Check if requester is a doctor with access
+        if (isDoctor[_requester]) return true;
+        
+        // Check if requester is an admin
+        if (isAdmin[_requester]) return true;
+        
+        // Check if requester is a family member with access
+        if (familyAccess[_patient][_requester].hasAccess) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Function to grant family access
+    function grantFamilyAccess(address _familyMember, string memory _relationship, uint256 _passcode) external onlyPatient {
+        require(_familyMember != msg.sender, "Cannot grant access to yourself");
+        require(!familyAccess[msg.sender][_familyMember].hasAccess, "Access already granted");
+        
+        // Verify patient's passcode for security
+        verifyPasscode(msg.sender, _passcode);
+        
+        // Add or update family member
+        familyAccess[msg.sender][_familyMember] = FamilyMember({
+            memberAddress: _familyMember,
+            relationship: _relationship,
+            hasAccess: true,
+            accessGrantedAt: block.timestamp
+        });
+        
+        // Add to patient's family members list if not already present
+        bool alreadyExists = false;
+        for (uint i = 0; i < patientFamilyMembers[msg.sender].length; i++) {
+            if (patientFamilyMembers[msg.sender][i] == _familyMember) {
+                alreadyExists = true;
+                break;
+            }
+        }
+        
+        if (!alreadyExists) {
+            patientFamilyMembers[msg.sender].push(_familyMember);
+        }
+        
+        emit AccessGranted(msg.sender, _familyMember, _relationship);
+    }
+    
+    // Function to revoke family access
+    function revokeFamilyAccess(address _familyMember, uint256 _passcode) external onlyPatient {
+        require(familyAccess[msg.sender][_familyMember].hasAccess, "No access to revoke");
+        
+        // Verify patient's passcode for security
+        verifyPasscode(msg.sender, _passcode);
+        
+        // Revoke access
+        familyAccess[msg.sender][_familyMember].hasAccess = false;
+        
+        emit AccessRevoked(msg.sender, _familyMember);
+    }
+    
+    // Function to get list of family members with access
+    function getFamilyMembers() external view returns (FamilyMember[] memory) {
+        address[] memory members = patientFamilyMembers[msg.sender];
+        FamilyMember[] memory result = new FamilyMember[](members.length);
+        
+        for (uint i = 0; i < members.length; i++) {
+            result[i] = familyAccess[msg.sender][members[i]];
+        }
+        
+        return result;
+    }
+    
     function verifyPasscode(address _patient, uint256 _passcode) internal view {
         require(
             patients[_patient].passcodeHash ==

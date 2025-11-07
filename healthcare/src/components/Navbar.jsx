@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useBlockchain } from "../context/BlockchainContext";
 import { useState, useEffect } from "react";
-import { Shield, User, History, Clipboard, ExternalLink, Boxes } from "lucide-react";
+import { Shield, User, History, Clipboard, ExternalLink, Boxes, Users } from "lucide-react";
 
 const Navbar = () => {
     const { account, contract } = useBlockchain();
@@ -64,6 +64,12 @@ const Navbar = () => {
                                 <Link to="/patientdashboard" className="flex items-center hover:text-green-400 transition duration-300">
                                     <Boxes size={16} className="mr-1" />
                                     <span>Patient Dashboard</span>
+                                </Link>
+                            )}
+                            {role === "Patient" && (
+                                <Link to="/family-access" className="flex items-center hover:text-green-400 transition duration-300">
+                                    <Users size={16} className="mr-1" />
+                                    <span>Family Access</span>
                                 </Link>
                             )}
                             {role === "Doctor" && (
@@ -131,7 +137,14 @@ const Navbar = () => {
                                     </div>
                                 </Link>
                             )}
-
+                            {role === "Patient" && (
+                                <Link to="/family-access" className="block py-2 px-4 hover:bg-gray-800" onClick={toggleMenu}>
+                                    <div className="flex items-center">
+                                        <Users size={16} className="mr-2" />
+                                        <span>Family Access</span>
+                                    </div>
+                                </Link>
+                            )}
                             <div className="py-2 px-4 text-gray-400">
                                 Wallet: {`${account.slice(0, 6)}...${account.slice(-4)}`}
                             </div>
